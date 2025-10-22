@@ -1,0 +1,395 @@
+components:
+  schemas:
+    internal_server.ErrorResponse:
+      properties:
+        code:
+          example: 400
+          type: integer
+        context:
+          additionalProperties: {}
+          type: object
+        error:
+          example: INVALID_INPUT
+          type: string
+        message:
+          example: Invalid request parameters
+          type: string
+      type: object
+    internal_server.PublicCreateSessionRequest:
+      properties:
+        duration:
+          example: 1h
+          type: string
+        profile_id:
+          example: prof_123
+          type: string
+        residential_proxy_city:
+          example: Los Angeles
+          type: string
+        residential_proxy_country:
+          example: US
+          type: string
+        residential_proxy_enabled:
+          example: false
+          type: boolean
+        residential_proxy_state:
+          example: CA
+          type: string
+        session_recording_enabled:
+          example: true
+          type: boolean
+        stealth_mode_enabled:
+          example: false
+          type: boolean
+      type: object
+    internal_server.PublicExtendSessionRequest:
+      properties:
+        duration:
+          example: 1h
+          type: string
+      type: object
+    internal_server.PublicProfile:
+      properties:
+        created_at:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    internal_server.PublicProfileList:
+      properties:
+        profiles:
+          items:
+            $ref: '#/components/schemas/internal_server.PublicProfile'
+          type: array
+          uniqueItems: false
+      type: object
+    internal_server.PublicSession:
+      properties:
+        cdp_url:
+          type: string
+        created_at:
+          type: string
+        expires_at:
+          type: string
+        id:
+          type: string
+        residential_proxy_enabled:
+          type: boolean
+        session_recording_enabled:
+          type: boolean
+        session_recording_url:
+          type: string
+        status:
+          type: string
+        stealth_mode_enabled:
+          type: boolean
+        vnc_password:
+          type: string
+        vnc_url:
+          type: string
+      type: object
+    internal_server.PublicSessionList:
+      properties:
+        sessions:
+          items:
+            $ref: '#/components/schemas/internal_server.PublicSession'
+          type: array
+          uniqueItems: false
+        total:
+          type: integer
+      type: object
+  securitySchemes:
+    ApiKeyAuth:
+      description: 'API Key (format: "exeq_sk_...")'
+      in: header
+      name: Authorization
+      type: apiKey
+    BearerAuth:
+      description: 'JWT Bearer token (format: "Bearer {token}")'
+      in: header
+      name: Authorization
+      type: apiKey
+info:
+  contact:
+    email: support@exeq.dev
+    name: API Support
+    url: https://exeq.dev/support
+  description: Remote on-demand browser infrastructure platform API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://exeq.dev/terms
+  title: Exeq API
+  version: "1.0"
+externalDocs:
+  description: ""
+  url: ""
+paths:
+  /v1/profiles:
+    get:
+      description: Lists all browser profiles for the organization
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.PublicProfileList'
+          description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Unauthorized
+      security:
+        - ApiKeyAuth: []
+      summary: List browser profiles
+      tags:
+        - profiles
+        - apikey
+  /v1/profiles/{id}:
+    get:
+      description: Retrieves details of a specific browser profile
+      parameters:
+        - description: Profile ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.PublicProfile'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Not Found
+      security:
+        - ApiKeyAuth: []
+      summary: Get browser profile
+      tags:
+        - profiles
+        - apikey
+  /v1/sessions:
+    get:
+      description: Lists browser sessions with pagination
+      parameters:
+        - description: Number of results per page (max 100)
+          in: query
+          name: limit
+          schema:
+            default: 25
+            type: integer
+        - description: Offset for pagination
+          in: query
+          name: offset
+          schema:
+            default: 0
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.PublicSessionList'
+          description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Unauthorized
+      security:
+        - ApiKeyAuth: []
+      summary: List browser sessions
+      tags:
+        - sessions
+        - apikey
+    post:
+      description: Creates a new browser session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/internal_server.PublicCreateSessionRequest'
+        description: Session options
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.PublicSession'
+          description: Created
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Unauthorized
+      security:
+        - ApiKeyAuth: []
+      summary: Create browser session
+      tags:
+        - sessions
+        - apikey
+  /v1/sessions/{id}:
+    delete:
+      description: Stops an active browser session
+      parameters:
+        - description: Session ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Not Found
+      security:
+        - ApiKeyAuth: []
+      summary: Stop browser session
+      tags:
+        - sessions
+        - apikey
+    get:
+      description: Retrieves details of a specific browser session
+      parameters:
+        - description: Session ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.PublicSession'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Not Found
+      security:
+        - ApiKeyAuth: []
+      summary: Get browser session
+      tags:
+        - sessions
+        - apikey
+  /v1/sessions/{id}/extend:
+    post:
+      description: Extends the duration of an active browser session
+      parameters:
+        - description: Session ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/internal_server.PublicExtendSessionRequest'
+        description: Extension duration
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.PublicSession'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internal_server.ErrorResponse'
+          description: Not Found
+      security:
+        - ApiKeyAuth: []
+      summary: Extend session duration
+      tags:
+        - sessions
+        - apikey
+openapi: 3.1.0
+servers:
+  - url: api.exeq.dev/
